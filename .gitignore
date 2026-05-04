@@ -1,0 +1,12 @@
+node_modules/
+.env
+__pycache__/
+*.pyc
+.DS_Store
+dist/
+.venv/
+*.mp3
+*.mp4
+*.wav
+*.m4a"ai-meeting-platform.txt" 
+"ai-meeting-platform.txt" 
