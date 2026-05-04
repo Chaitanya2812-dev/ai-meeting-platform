@@ -1,0 +1,17 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+body {
+  background-color: #f3f4f6; /* Tailwind's gray-100 */
+  color: #1f2937;           /* Tailwind's gray-800 */
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+h1, h2, h3 {
+  font-weight: 600;
+  color: #111827; /* Tailwind's gray-900 */
+}
+
+button {
+  transition: all 0.2s ease-in-out;
+}
