@@ -1,160 +1,166 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import Upload from "../components/Upload";
 import Summary from "../components/Summary";
 import Chatbot from "../components/Chatbot";
 import Export from "../components/Export";
-import fileService from "../services/fileService";
-import summaryService from "../services/summaryService";
-import chatService from "../services/chatService";
-import exportService from "../services/exportService";
 import Loader from "../components/Loader";
 import Navbar from "../components/Navbar";
 import Toast from "../components/Toast";
-import { useTheme } from "../context/ThemeContext";
+import fileService from "../services/fileService";
+import chatService from "../services/chatService";
+import exportService from "../services/exportService";
+import summaryService from "../services/summaryService";
 
 export default function Home() {
-    const [toast, setToast] = useState(null);
-    const { darkMode, toggleTheme } = useTheme();
+  const [toast, setToast] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const existingMeetingId = searchParams.get("id");
 
-  // Central state
+  // Central meeting state
   const [meeting, setMeeting] = useState({
     id: null,
-    status: "idle", // idle | uploading | processing | ready | error
+    status: "idle", // idle | uploading | ready | error
     transcript: "",
     summary: "",
+    decisions: [],
     tasks: [],
   });
 
-  //  Upload handler
+  // Load meeting if ID is in URL
+  useEffect(() => {
+    if (existingMeetingId) {
+      loadMeeting(existingMeetingId);
+    }
+  }, [existingMeetingId]);
+
+  const loadMeeting = async (id) => {
+    try {
+      setMeeting((p) => ({ ...p, status: "uploading" }));
+      const data = await summaryService.getMeeting(id);
+      setMeeting({
+        id: data._id,
+        status: "ready",
+        transcript: data.transcript,
+        summary: data.summary,
+        decisions: data.decisions || [],
+        tasks: data.tasks || [],
+      });
+    } catch (err) {
+      console.error(err);
+      setMeeting((p) => ({ ...p, status: "error" }));
+      setToast({ message: "Failed to load meeting", type: "error" });
+      setTimeout(() => setToast(null), 4000);
+    }
+  };
+
+  // Upload handler — backend does: upload -> FastAPI transcription -> Groq summary + tasks -> returns all data
   const handleUpload = async (file) => {
     try {
-      setMeeting((prev) => ({ ...prev, status: "uploading" }));
+      setMeeting((p) => ({ ...p, status: "uploading" }));
 
       const data = await fileService.upload(file);
+      // data = { success, meetingId, transcript, summary, decisions, tasks }
 
       setMeeting({
         id: data.meetingId,
-        status: "processing",
-        transcript: "",
-        summary: "",
-        tasks: [],
+        status: "ready",
+        transcript: data.transcript,
+        summary: data.summary,
+        decisions: data.decisions || [],
+        tasks: data.tasks || [],
       });
 
-      pollMeeting(data.meetingId);
+      setToast({ message: "Meeting analyzed successfully!", type: "success" });
+      setTimeout(() => setToast(null), 3000);
     } catch (err) {
       console.error(err);
-      setMeeting((prev) => ({ ...prev, status: "error" }));
+      setMeeting((p) => ({ ...p, status: "error" }));
+      setToast({ message: err?.response?.data?.error || "Upload failed", type: "error" });
+      setTimeout(() => setToast(null), 4000);
     }
   };
 
-  //  Polling
-  const pollMeeting = async (id) => {
-    try {
-      const res = await summaryService.getSummary(id);
-
-      if (res.status === "processing") {
-        setTimeout(() => pollMeeting(id), 3000);
-      } else {
-        setMeeting({
-          id,
-          status: "ready",
-          transcript: res.transcript,
-          summary: res.summary,
-          tasks: res.tasks,
-        });
-      }
-    } catch (err) {
-      console.error(err);
-      setMeeting((prev) => ({ ...prev, status: "error" }));
-    }
-  };
-
-  //  Chat
+  // Chat handler
   const handleAsk = async (q) => {
-    if (!meeting.id) return;
+    if (!meeting.id) return "No meeting loaded.";
     return await chatService.ask(meeting.id, q);
   };
 
-      //  Export
-    const handleExport = async (type) => {
+  // Export handler
+  const handleExport = async (type) => {
     try {
+      if (type === "markdown") {
+        await exportService.exportMarkdown(meeting.id);
+        setToast({ message: `Markdown export started`, type: "success" });
+      } else {
+        // Fallback for Notion etc if implemented later
         await exportService.exportData(meeting.id, type);
-        setToast({ message: `Exported via ${type}`, type: "success" });
-
-        setTimeout(() => setToast(null), 3000);
+      }
+      setTimeout(() => setToast(null), 3000);
     } catch {
-        setToast({ message: "Export failed", type: "error" });
+      setToast({ message: "Export failed", type: "error" });
+      setTimeout(() => setToast(null), 3000);
     }
-    };
+  };
+
+  const isProcessing = meeting.status === "uploading";
 
   return (
     <div className="min-h-screen">
-      
-      {/* Navbar */}
-      <Navbar darkMode={darkMode} toggleTheme={toggleTheme} />
+      <Navbar />
 
-      {/* Main Layout */}
-      <main className="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-5 gap-6 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* Left Panel: Upload + Summary + Export */}
+        <div className="lg:col-span-2 space-y-5 overflow-y-auto h-auto lg:max-h-[85vh] pr-1 pb-6 lg:pb-0">
+          <Upload onUpload={handleUpload} disabled={isProcessing} />
 
-        {/* left: Upload + Summary + Export */}
-        <div className="lg:col-span-2 space-y-6 overflow-y-auto max-h-[80vh] pr-2">
-          
-          <Upload onUpload={handleUpload} />
+          {isProcessing && <Loader text="Uploading & analyzing with Groq AI..." />}
 
-          {/* Status */}
-          {meeting.status === "uploading" && (
-            <Loader text="Uploading file..." />
-          )}
-
-          {meeting.status === "processing" && (
-            <p className="text-center text-black-500">
-                <Loader text="Transcribing & generating summary..." />
-            </p>
+          {meeting.status === "error" && (
+            <div className="glass-card p-4 border-red-500/30 text-center">
+              <p className="text-red-400 text-sm">Something went wrong. Please try again.</p>
+            </div>
           )}
 
           {meeting.status === "ready" && (
             <Summary
               transcript={meeting.transcript}
               summary={meeting.summary}
+              decisions={meeting.decisions}
               tasks={meeting.tasks}
             />
           )}
 
-          {meeting.status === "error" && (
-            <p className="text-red-500 text-center">
-              Something went wrong. Please try again.
-            </p>
-          )}
-
-          {meeting.id && <Export onExport={handleExport} />}
+          {meeting.id && meeting.status === "ready" && <Export onExport={handleExport} />}
         </div>
 
-        {/* right: Chat (Primary) */}
-        <div className="lg:col-span-3 h-[80vh] bg-white dark:bg-gray-900 rounded-xl shadow p-4 flex flex-col">
-          
+        {/* Right Panel: Chatbot */}
+        <div className="lg:col-span-3 h-[70vh] lg:h-[85vh] glass-card p-5 flex flex-col">
           {meeting.id ? (
             <Chatbot onAsk={handleAsk} />
           ) : (
-            <div className="h-full flex flex-col items-center justify-center text-gray-500 text-center">
-              <h2 className="text-lg font-semibold mb-2">
-                Start by uploading a meeting
-              </h2>
-              <p className="text-sm">
-                Then ask questions, get insights, and extract action items.
+            <div className="h-full flex flex-col items-center justify-center text-center px-6">
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center mb-5 border border-indigo-500/10">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-indigo-500/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                  <line x1="12" x2="12" y1="19" y2="22"/>
+                </svg>
+              </div>
+              <h2 className="text-lg font-semibold text-slate-300 mb-2">Upload a meeting to get started</h2>
+              <p className="text-sm text-slate-600 max-w-[280px]">
+                Upload an audio or video file. AI will transcribe, summarize, and extract action items automatically.
               </p>
             </div>
           )}
-
         </div>
-
       </main>
 
-        {/*  TOAST GOES HERE (GLOBAL LEVEL) */}
-        <div className="fixed bottom-5 right-5">
-            {toast && <Toast message={toast.message} type={toast.type} />}
-        </div>
-
+      {/* Global Toast */}
+      <div className="fixed bottom-5 left-5 right-5 sm:left-auto sm:right-5 z-50 flex justify-center sm:block">
+        {toast && <Toast message={toast.message} type={toast.type} />}
+      </div>
     </div>
   );
 }
-

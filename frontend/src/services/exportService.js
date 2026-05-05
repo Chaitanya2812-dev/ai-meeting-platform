@@ -1,8 +1,9 @@
 import api from "./api";
 
-const exportData = async (meetingId, type) => {
-  const res = await api.post(`/export/${meetingId}`, { type });
-  return res.data; // confirmation
+const exportMarkdown = async (meetingId) => {
+  const token = localStorage.getItem("token");
+  // The backend markdown endpoint uses GET
+  window.open(`${api.defaults.baseURL}/export/markdown/${meetingId}?token=${token}`, "_blank");
 };
 
-export default { exportData };
+export default { exportMarkdown };

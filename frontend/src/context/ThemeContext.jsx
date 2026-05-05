@@ -31,7 +31,7 @@ export const ThemeProvider = ({ children }) => {
   );
 };
 
-// ✅ THIS MUST EXIST
+//  THIS MUST EXIST
 export const useTheme = () => {
   return useContext(ThemeContext);
 };
