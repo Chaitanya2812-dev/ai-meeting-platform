@@ -6,4 +6,9 @@ const exportMarkdown = async (meetingId) => {
   window.open(`${api.defaults.baseURL}/export/markdown/${meetingId}?token=${token}`, "_blank");
 };
 
-export default { exportMarkdown };
+const exportEmail = async (meetingId, toEmail) => {
+  const res = await api.post(`/export/email/${meetingId}`, { toEmail });
+  return res.data;
+};
+
+export default { exportMarkdown, exportEmail };

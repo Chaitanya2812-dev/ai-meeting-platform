@@ -62,6 +62,25 @@ export default function Summary({ transcript, summary, decisions, tasks }) {
                 <div>
                   <h3 className="text-sm font-semibold text-indigo-700 dark:text-indigo-300 mb-2">AI-Generated Summary</h3>
                   <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">{summary || "No summary available."}</p>
+                  
+                  {decisions && decisions.length > 0 && (
+                    <div className="mt-6 border-t border-indigo-500/10 dark:border-indigo-500/20 pt-4">
+                      <h4 className="text-sm font-semibold text-indigo-700 dark:text-indigo-300 mb-3 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                        </svg>
+                        Key Decisions
+                      </h4>
+                      <ul className="space-y-2">
+                        {decisions.map((d, idx) => (
+                          <li key={idx} className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300">
+                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 flex-shrink-0 mt-1.5"></div>
+                            <span>{d}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

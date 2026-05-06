@@ -36,7 +36,7 @@ export default function Home() {
 
   const loadMeeting = async (id) => {
     try {
-      setMeeting((p) => ({ ...p, status: "uploading" }));
+      setMeeting((p) => ({ ...p, status: "loading" }));
       const data = await summaryService.getMeeting(id);
       setMeeting({
         id: data._id,
@@ -88,14 +88,19 @@ export default function Home() {
   };
 
   // Export handler
-  const handleExport = async (type) => {
+  const handleExport = async (type, emailAddress) => {
     try {
       if (type === "markdown") {
         await exportService.exportMarkdown(meeting.id);
         setToast({ message: `Markdown export started`, type: "success" });
+      } else if (type === "email") {
+        await exportService.exportEmail(meeting.id, emailAddress);
+        setToast({ message: `Email sent successfully`, type: "success" });
       } else {
         // Fallback for Notion etc if implemented later
-        await exportService.exportData(meeting.id, type);
+        if (exportService.exportData) {
+          await exportService.exportData(meeting.id, type);
+        }
       }
       setTimeout(() => setToast(null), 3000);
     } catch {
@@ -104,7 +109,7 @@ export default function Home() {
     }
   };
 
-  const isProcessing = meeting.status === "uploading";
+  const isProcessing = meeting.status === "uploading" || meeting.status === "loading";
 
   return (
     <div className="min-h-screen">
@@ -115,7 +120,8 @@ export default function Home() {
         <div className="lg:col-span-2 space-y-5 overflow-y-auto h-auto lg:max-h-[85vh] pr-1 pb-6 lg:pb-0">
           <Upload onUpload={handleUpload} disabled={isProcessing} />
 
-          {isProcessing && <Loader text="Uploading & analyzing with Groq AI..." />}
+          {meeting.status === "uploading" && <Loader text="Uploading & analyzing with Groq AI..." />}
+          {meeting.status === "loading" && <Loader text="Loading meeting details..." />}
 
           {meeting.status === "error" && (
             <div className="glass-card p-4 border-red-500/30 text-center">
