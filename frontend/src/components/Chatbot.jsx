@@ -5,95 +5,101 @@ export default function Chatbot({ onAsk }) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const endRef = useRef(null);
+  const textareaRef = useRef(null);
 
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading]);
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
 
   const handleSend = async () => {
     if (!input.trim() || loading) return;
-    setMessages((p) => [...p, { role: "user", text: input }]);
+    const q = input.trim();
+    setMessages(p => [...p, { role: "user", text: q }]);
     setInput("");
+    if (textareaRef.current) { textareaRef.current.style.height = "36px"; }
     setLoading(true);
     try {
-      const answer = await onAsk(input);
-      setMessages((p) => [...p, { role: "bot", text: answer }]);
+      const answer = await onAsk(q);
+      setMessages(p => [...p, { role: "bot", text: answer }]);
     } catch {
-      setMessages((p) => [...p, { role: "bot", text: " Error. Try again." }]);
+      setMessages(p => [...p, { role: "bot", text: "Something went wrong. Please try again." }]);
     }
     setLoading(false);
   };
 
-  const onKey = (e) => { 
-    if (e.key === "Enter" && !e.shiftKey) { 
-      e.preventDefault(); 
-      handleSend(); 
-    } 
-  };
+  const onKey = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } };
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-700/50 mb-3">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">💬</div>
-        <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100">Chat with Meeting</h2>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, paddingBottom: 12, borderBottom: "1px solid var(--border)", marginBottom: 12 }}>
+        <div style={{ width: 28, height: 28, background: "var(--accent)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <svg style={{ width: 14, height: 14, color: "#fff" }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+        </div>
+        <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "0.875rem", color: "var(--text-primary)" }}>
+          Ask about this meeting
+        </span>
       </div>
-      <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+
+      {/* Messages */}
+      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 10, paddingRight: 2 }}>
         {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-slate-500 text-sm">
-            <p>No messages yet.</p>
-            <p className="text-xs mt-1 text-slate-500 dark:text-slate-400">Try: "What decisions were made?"</p>
+          <div style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 }}>
+            <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>No messages yet</p>
+            <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", background: "var(--bg-subtle)", padding: "4px 10px", borderRadius: 99, border: "1px solid var(--border)" }}>
+              Try: "What decisions were made?"
+            </p>
           </div>
         )}
         {messages.map((m, i) => (
-          <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-            <div className={`max-w-[85%] px-4 py-2.5 text-sm rounded-2xl ${
-              m.role === "user"
-                ? "bg-gradient-to-r from-indigo-600 to-indigo-500 text-white rounded-br-md shadow-md"
-                : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/50 rounded-bl-md"
-            }`}>
-              <p className="leading-relaxed whitespace-pre-wrap">{m.text}</p>
+          <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
+            <div style={{
+              maxWidth: "82%",
+              padding: "9px 13px",
+              borderRadius: m.role === "user" ? "12px 12px 3px 12px" : "12px 12px 12px 3px",
+              background: m.role === "user" ? "var(--accent)" : "var(--surface-raised)",
+              border: m.role === "user" ? "none" : "1px solid var(--border)",
+              fontSize: "0.8125rem",
+              color: m.role === "user" ? "#fff" : "var(--text-primary)",
+              lineHeight: 1.6,
+              boxShadow: "var(--shadow-sm)",
+            }}>
+              {m.text}
             </div>
           </div>
         ))}
         {loading && (
-          <div className="flex justify-start">
-            <div className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 px-4 py-3 rounded-2xl rounded-bl-md flex gap-1.5">
-              <div className="w-2 h-2 bg-indigo-500 dark:bg-indigo-400 rounded-full animate-bounce"></div>
-              <div className="w-2 h-2 bg-indigo-500 dark:bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
-              <div className="w-2 h-2 bg-indigo-500 dark:bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
+          <div style={{ display: "flex", justifyContent: "flex-start" }}>
+            <div style={{ padding: "10px 14px", background: "var(--surface-raised)", border: "1px solid var(--border)", borderRadius: "12px 12px 12px 3px", display: "flex", gap: 4 }}>
+              {[0, 150, 300].map(d => (
+                <span key={d} style={{ width: 7, height: 7, background: "var(--accent)", borderRadius: "50%", display: "inline-block", animation: "bounce 1.2s infinite ease-in-out", animationDelay: d + "ms" }} />
+              ))}
             </div>
           </div>
         )}
         <div ref={endRef} />
       </div>
-      <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700/50">
-        <div className="flex items-end gap-2 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700/50 px-4 py-2 focus-within:border-indigo-500/50">
-          <textarea 
-            id="chat-input" 
-            aria-label="Chat input message"
-            value={input} 
-            onChange={(e) => {
-              setInput(e.target.value);
-              e.target.style.height = 'auto';
-              e.target.style.height = e.target.scrollHeight + 'px';
-            }} 
-            onKeyDown={onKey}
-            className="flex-1 bg-transparent text-sm text-slate-800 dark:text-slate-200 placeholder-slate-500 outline-none resize-none py-1.5 max-h-32 min-h-[36px]" 
-            placeholder="Ask about the meeting... (Shift+Enter for new line)" 
-            disabled={loading} 
-            rows={1}
-          />
-          <button 
-            id="chat-send" 
-            aria-label="Send message"
-            onClick={handleSend} 
-            disabled={!input.trim() || loading}
-            className="w-9 h-9 flex-shrink-0 rounded-lg bg-gradient-to-r from-indigo-600 to-indigo-500 flex items-center justify-center text-white disabled:opacity-30 mb-0.5"
-          >
-            ➤
+
+      {/* Input */}
+      <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--border)" }}>
+        <div style={{ display: "flex", alignItems: "flex-end", gap: 8, background: "var(--bg-subtle)", border: "1px solid var(--border)", borderRadius: 12, padding: "8px 12px", transition: "border-color 0.15s ease" }}
+          onFocus={e => e.currentTarget.style.borderColor = "var(--accent)"}
+          onBlur={e => e.currentTarget.style.borderColor = "var(--border)"}>
+          <textarea ref={textareaRef} value={input}
+            onChange={e => { setInput(e.target.value); e.target.style.height = "auto"; e.target.style.height = e.target.scrollHeight + "px"; }}
+            onKeyDown={onKey} placeholder="Ask about the meeting..." disabled={loading} rows={1}
+            style={{ flex: 1, background: "none", border: "none", outline: "none", resize: "none", fontFamily: "var(--font-body)", fontSize: "0.8125rem", color: "var(--text-primary)", minHeight: 36, maxHeight: 120, lineHeight: 1.5, paddingTop: 6 }} />
+          <button onClick={handleSend} disabled={!input.trim() || loading}
+            style={{ width: 32, height: 32, flexShrink: 0, borderRadius: 8, background: !input.trim() || loading ? "var(--border)" : "var(--accent)", border: "none", cursor: !input.trim() || loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.15s ease" }}>
+            <svg style={{ width: 14, height: 14, color: !input.trim() || loading ? "var(--text-muted)" : "#fff" }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
           </button>
         </div>
+        <p style={{ fontSize: "0.7rem", color: "var(--text-muted)", marginTop: 5, textAlign: "center" }}>Shift+Enter for new line</p>
       </div>
+
+      <style>{`@keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-5px)} }`}</style>
     </div>
   );
 }

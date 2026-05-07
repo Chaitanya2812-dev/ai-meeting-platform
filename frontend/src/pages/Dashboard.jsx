@@ -12,127 +12,134 @@ export default function Dashboard() {
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
-    const fetchMeetings = async () => {
-      try {
-        const data = await summaryService.getAllMeetings();
-        setMeetings(data || []);
-      } catch (err) {
-        setToast({ message: "Failed to load meetings", type: "error" });
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchMeetings();
+    summaryService.getAllMeetings()
+      .then(data => setMeetings(data || []))
+      .catch(() => setToast({ message: "Failed to load meetings", type: "error" }))
+      .finally(() => setLoading(false));
   }, []);
 
-  const handleMarkdownExport = async (meetingId) => {
-    try {
-      await exportService.exportMarkdown(meetingId);
-      setToast({ message: "Export started", type: "success" });
-      setTimeout(() => setToast(null), 3000);
-    } catch {
-      setToast({ message: "Export failed", type: "error" });
-      setTimeout(() => setToast(null), 3000);
-    }
+  const showToast = (msg, type = "success") => {
+    setToast({ message: msg, type });
+    setTimeout(() => setToast(null), 3000);
   };
 
-  const filteredMeetings = useMemo(() => {
-    return meetings.filter(m =>
-      m.title?.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [meetings, search]);
+  const handleExport = async (id) => {
+    try { await exportService.exportMarkdown(id); showToast("Export ready"); }
+    catch { showToast("Export failed", "error"); }
+  };
+
+  const filtered = useMemo(() =>
+    meetings.filter(m => m.title?.toLowerCase().includes(search.toLowerCase())),
+    [meetings, search]
+  );
 
   return (
-    <div className="min-h-screen">
+    <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
       <Navbar />
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 20px" }}>
+        {/* Page header */}
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginBottom: 24, flexWrap: "wrap" }}>
           <div>
-            <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Past Meetings</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage and export your meeting summaries</p>
+            <h1 style={{ fontFamily: "var(--font-display)", fontSize: "1.5rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: 4 }}>
+              Past Meetings
+            </h1>
+            <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>
+              {meetings.length} meeting{meetings.length !== 1 ? "s" : ""} recorded
+            </p>
           </div>
 
-          <div className="relative max-w-sm w-full">
-  <span className="absolute inset-y-0 left-3 flex items-center text-slate-400 pointer-events-none">
-    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
-    </svg>
-  </span>
-  <input
-    type="text"
-    placeholder="Search meetings..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-            />
+          {/* Search */}
+          <div style={{ position: "relative", width: 260, flexShrink: 0 }}>
+            <svg style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", width: 14, height: 14, color: "var(--text-muted)", pointerEvents: "none" }}
+              viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+            </svg>
+            <input className="input" value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Search meetings..."
+              style={{ paddingLeft: 32, height: 36, fontSize: "0.8125rem" }} />
           </div>
         </div>
 
+        {/* Content */}
         {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="w-8 h-8 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
+          <div style={{ display: "flex", justifyContent: "center", padding: "60px 0" }}>
+            <div style={{ width: 28, height: 28, border: "2px solid var(--border)", borderTopColor: "var(--accent)", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+            <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
           </div>
-        ) : filteredMeetings.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in-up">
-            {filteredMeetings.map((meeting) => (
-              <div key={meeting._id} className="glass-card p-5 flex flex-col transition-transform hover:-translate-y-1">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-slate-800 dark:text-slate-100 text-lg mb-2 line-clamp-1">
-                    {meeting.title || "Untitled Meeting"}
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 flex items-center gap-1">
-                    📅 {new Date(meeting.createdAt).toLocaleDateString()}
-                  </p>
+        ) : filtered.length > 0 ? (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 14 }}>
+            {filtered.map((m, i) => (
+              <div key={m._id} className="card anim-up"
+                style={{ padding: "18px", display: "flex", flexDirection: "column", gap: 12, animationDelay: `${i * 0.04}s` }}>
 
-                  <div className="flex gap-4 mb-4">
-                    <div className="bg-slate-100 dark:bg-slate-800/50 rounded-lg p-3 flex-1 text-center border border-slate-200 dark:border-slate-700/50">
-                      <p className="text-xl font-bold text-indigo-500">{meeting.tasks?.length || 0}</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">Tasks</p>
-                    </div>
-                    <div className="bg-slate-100 dark:bg-slate-800/50 rounded-lg p-3 flex-1 text-center border border-slate-200 dark:border-slate-700/50">
-                      <p className="text-xl font-bold text-emerald-500">{meeting.decisions?.length || 0}</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">Decisions</p>
-                    </div>
-                  </div>
+                {/* Title + date */}
+                <div>
+                  <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "0.9375rem", color: "var(--text-primary)", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {m.title || "Untitled Meeting"}
+                  </h3>
+                  <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 4 }}>
+                    <svg style={{ width: 11, height: 11 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    {new Date(m.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                  </p>
                 </div>
 
-                <div className="flex gap-2 mt-auto pt-4 border-t border-slate-200 dark:border-slate-700/50">
-                  <Link
-                    to={`/?id=${meeting._id}`}
-                    className="flex-1 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-lg text-sm font-medium text-center transition-colors"
-                  >
-                    View Details
+                {/* Stats */}
+                <div style={{ display: "flex", gap: 8 }}>
+                  {[{ label: "Tasks", count: m.tasks?.length || 0, color: "var(--accent)" }, { label: "Decisions", count: m.decisions?.length || 0, color: "var(--success)" }].map(stat => (
+                    <div key={stat.label} style={{ flex: 1, background: "var(--bg-subtle)", border: "1px solid var(--border)", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+                      <p style={{ fontFamily: "var(--font-display)", fontSize: "1.1rem", fontWeight: 800, color: stat.color }}>{stat.count}</p>
+                      <p style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: 500 }}>{stat.label}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Actions */}
+                <div style={{ display: "flex", gap: 8, paddingTop: 10, borderTop: "1px solid var(--border)" }}>
+                  <Link to={`/?id=${m._id}`}
+                    style={{ flex: 1, height: 34, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--accent-light)", color: "var(--accent)", borderRadius: 8, fontSize: "0.8rem", fontWeight: 600, textDecoration: "none", border: "1px solid var(--accent)", transition: "all 0.15s ease" }}>
+                    View
                   </Link>
-                  <button
-                    onClick={() => handleMarkdownExport(meeting._id)}
-                    className="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-sm transition-colors"
-                    title="Export Markdown"
-                  >
-                    ⬇️ MD
+                  <button onClick={() => handleExport(m._id)}
+                    style={{ height: 34, padding: "0 12px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, fontSize: "0.8rem", fontWeight: 500, color: "var(--text-secondary)", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, transition: "all 0.15s ease", fontFamily: "var(--font-body)" }}>
+                    <svg style={{ width: 13, height: 13 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    MD
                   </button>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="text-center py-20 glass-card">
-            <h2 className="text-lg font-medium text-slate-600 dark:text-slate-300 mb-2">No meetings found</h2>
-            <p className="text-slate-500 dark:text-slate-400 text-sm">
-              {search ? "Try adjusting your search terms." : "You haven't uploaded any meetings yet."}
+          <div className="card" style={{ padding: "48px 24px", textAlign: "center" }}>
+            <div style={{ width: 44, height: 44, background: "var(--bg-subtle)", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+              <svg style={{ width: 20, height: 20, color: "var(--text-muted)" }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+              </svg>
+            </div>
+            <p style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "1rem", color: "var(--text-primary)", marginBottom: 6 }}>
+              {search ? "No results found" : "No meetings yet"}
+            </p>
+            <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)", marginBottom: 18 }}>
+              {search ? "Try different search terms" : "Upload your first meeting to get started"}
             </p>
             {!search && (
-              <Link to="/" className="inline-block mt-4 btn-primary">
-                Upload New Meeting
+              <Link to="/" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "9px 18px", background: "var(--accent)", color: "#fff", borderRadius: 8, fontSize: "0.8125rem", fontWeight: 600, textDecoration: "none" }}>
+                Upload Meeting
               </Link>
             )}
           </div>
         )}
       </main>
 
-      <div className="fixed bottom-5 right-5 z-50">
-        {toast && <Toast message={toast.message} type={toast.type} />}
-      </div>
+      {toast && (
+        <div style={{ position: "fixed", bottom: 20, right: 20, zIndex: 50 }}>
+          <Toast message={toast.message} type={toast.type} />
+        </div>
+      )}
     </div>
   );
 }

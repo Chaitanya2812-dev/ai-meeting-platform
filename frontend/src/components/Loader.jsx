@@ -1,11 +1,9 @@
-export default function Loader({ text = "Loading..." }) {
+export default function Loader({ text = "Processing..." }) {
   return (
-    <div className="flex flex-col items-center justify-center py-8">
-      <div className="relative w-12 h-12">
-        <div className="absolute inset-0 rounded-full border-2 border-indigo-500/20"></div>
-        <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-indigo-500 animate-spin"></div>
-      </div>
-      <p className="mt-3 text-sm text-slate-600 dark:text-slate-400 font-medium">{text}</p>
+    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px", background: "var(--accent-light)", border: "1px solid var(--accent)", borderRadius: 10 }}>
+      <div style={{ width: 16, height: 16, border: "2px solid var(--accent-light)", borderTopColor: "var(--accent)", borderRadius: "50%", animation: "spin 0.7s linear infinite", flexShrink: 0 }} />
+      <span style={{ fontSize: "0.8125rem", fontWeight: 500, color: "var(--accent)", fontFamily: "var(--font-body)" }}>{text}</span>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
