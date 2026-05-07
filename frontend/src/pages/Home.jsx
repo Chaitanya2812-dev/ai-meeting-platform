@@ -55,11 +55,11 @@ export default function Home() {
   };
 
   // Upload handler — backend does: upload -> FastAPI transcription -> Groq summary + tasks -> returns all data
-  const handleUpload = async (file) => {
+  const handleUpload = async (file,language) => {
     try {
       setMeeting((p) => ({ ...p, status: "uploading" }));
 
-      const data = await fileService.upload(file);
+      const data = await fileService.upload(file,"My Meeting",language);
       // data = { success, meetingId, transcript, summary, decisions, tasks }
 
       setMeeting({
