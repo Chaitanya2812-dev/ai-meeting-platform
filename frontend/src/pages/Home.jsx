@@ -155,7 +155,7 @@ export default function Home() {
                 </svg>
               </div>
               <h2 className="text-lg font-semibold text-slate-300 mb-2">Upload a meeting to get started</h2>
-              <p className="text-sm text-slate-600 max-w-[280px]">
+             <p className="text-sm text-slate-500 dark:text-slate-400 max-w-[280px]">
                 Upload an audio or video file. AI will transcribe, summarize, and extract action items automatically.
               </p>
             </div>

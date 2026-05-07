@@ -33,7 +33,7 @@ export default function Summary({ transcript, summary, decisions, tasks }) {
               <span className={`ml-1 px-1.5 py-0.5 text-xs rounded-full ${
                 activeTab === tab.id 
                   ? "bg-indigo-500/20 text-indigo-300" 
-                  : "bg-slate-700 text-slate-400"
+                  : ": "bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400""
               }`}>
                 {tab.count}
               </span>

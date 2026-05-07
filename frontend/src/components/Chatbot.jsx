@@ -41,7 +41,7 @@ export default function Chatbot({ onAsk }) {
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-slate-500 text-sm">
             <p>No messages yet.</p>
-            <p className="text-xs mt-1 text-slate-600">Try: "What decisions were made?"</p>
+            <p className="text-xs mt-1 text-slate-500 dark:text-slate-400">Try: "What decisions were made?"</p>
           </div>
         )}
         {messages.map((m, i) => (

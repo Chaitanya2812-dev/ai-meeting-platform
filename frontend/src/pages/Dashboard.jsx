@@ -54,12 +54,14 @@ export default function Dashboard() {
           </div>
 
           <div className="relative max-w-sm w-full">
-            <span className="absolute inset-y-0 left-3 flex items-center text-slate-400">
-              ⛶ ⌕
-            </span>
-            <input
-              type="text"
-              placeholder="            Search meetings..."
+  <span className="absolute inset-y-0 left-3 flex items-center text-slate-400 pointer-events-none">
+    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+    </svg>
+  </span>
+  <input
+    type="text"
+    placeholder="Search meetings..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
