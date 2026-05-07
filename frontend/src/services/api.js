@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:5000/api", // Node.js backend
+  baseURL: "https://ai-meeting-platform.onrender.com/api", // Node.js backend
 });
 
 // Attach JWT token to every request if available
