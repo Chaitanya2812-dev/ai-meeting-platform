@@ -11,13 +11,14 @@ import fileService from "../services/fileService";
 import chatService from "../services/chatService";
 import exportService from "../services/exportService";
 import summaryService from "../services/summaryService";
+import CalendarExport from "../components/CalendarExport";
 
 export default function Home() {
   const [toast, setToast] = useState(null);
   const [searchParams] = useSearchParams();
   const existingMeetingId = searchParams.get("id");
 
-  const [meeting, setMeeting] = useState({ id: null, status: "idle", transcript: "", summary: "", decisions: [], tasks: [] });
+  const [meeting, setMeeting] = useState({ id: null, status: "idle", transcript: "", summary: "", decisions: [], tasks: [], calendarEvents: [] });
 
   useEffect(() => { if (existingMeetingId) loadMeeting(existingMeetingId); }, [existingMeetingId]);
 
@@ -30,7 +31,7 @@ export default function Home() {
     try {
       setMeeting(p => ({ ...p, status: "loading" }));
       const data = await summaryService.getMeeting(id);
-      setMeeting({ id: data._id, status: "ready", transcript: data.transcript, summary: data.summary, decisions: data.decisions || [], tasks: data.tasks || [] });
+      setMeeting({ id: data._id, status: "ready", transcript: data.transcript, summary: data.summary, decisions: data.decisions || [], tasks: data.tasks || [], calendarEvents: data.calendarEvents || [] });
     } catch {
       setMeeting(p => ({ ...p, status: "error" }));
       showToast("Failed to load meeting", "error");
@@ -41,7 +42,7 @@ export default function Home() {
     try {
       setMeeting(p => ({ ...p, status: "uploading" }));
       const data = await fileService.upload(file, "My Meeting", language);
-      setMeeting({ id: data.meetingId, status: "ready", transcript: data.transcript, summary: data.summary, decisions: data.decisions || [], tasks: data.tasks || [] });
+      setMeeting({ id: data.meetingId, status: "ready", transcript: data.transcript, summary: data.summary, decisions: data.decisions || [], tasks: data.tasks || [], calendarEvents: data.calendarEvents || [] });
       showToast("Meeting analyzed successfully!");
     } catch (err) {
       setMeeting(p => ({ ...p, status: "error" }));
@@ -87,9 +88,12 @@ export default function Home() {
               </div>
             )}
             {meeting.status === "ready" && (
-              <Summary transcript={meeting.transcript} summary={meeting.summary} decisions={meeting.decisions} tasks={meeting.tasks} />
+              <Summary transcript={meeting.transcript} summary={meeting.summary} decisions={meeting.decisions} tasks={meeting.tasks} calendarEvents={meeting.calendarEvents} />
             )}
             {meeting.id && meeting.status === "ready" && <Export onExport={handleExport} />}
+            {meeting.status === "ready" && meeting.calendarEvents?.length > 0 && (
+              <CalendarExport events={meeting.calendarEvents} />
+            )}
           </div>
 
           {/* Right — Chatbot */}
@@ -132,4 +136,5 @@ export default function Home() {
       `}</style>
     </div>
   );
+  <Footer />
 }

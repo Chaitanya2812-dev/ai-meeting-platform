@@ -4,14 +4,15 @@ const TABS = [
   { id: "summary",   label: "Summary",      icon: "📝" },
   { id: "tasks",     label: "Action Items", icon: "✅" },
   { id: "decisions", label: "Decisions",    icon: "⚡" },
+  { id: "calendar",  label: "Calendar",     icon: "📅" },
   { id: "transcript",label: "Transcript",   icon: "📄" },
 ];
 
-export default function Summary({ transcript, summary, decisions, tasks }) {
+export default function Summary({ transcript, summary, decisions, tasks, calendarEvents }) {
   const [activeTab, setActiveTab] = useState("summary");
   const [expandedTranscript, setExpandedTranscript] = useState(false);
 
-  const counts = { tasks: tasks?.length, decisions: decisions?.length };
+  const counts = { tasks: tasks?.length, decisions: decisions?.length, calendar: calendarEvents?.length };
 
   return (
     <div className="card anim-up" style={{ overflow: "hidden", animationDelay: "0.08s" }}>
@@ -114,6 +115,44 @@ export default function Summary({ transcript, summary, decisions, tasks }) {
               </div>
             )) : (
               <p style={{ textAlign: "center", color: "var(--text-muted)", fontSize: "0.8125rem", padding: "24px 0" }}>No decisions captured.</p>
+            )}
+          </div>
+        )}
+
+        {activeTab === "calendar" && (
+          <div className="anim-in" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {calendarEvents?.length > 0 ? calendarEvents.map((ev, i) => {
+              const typeColors = {
+                meeting:  { color: "var(--accent)", bg: "var(--accent-light)" },
+                deadline: { color: "var(--error, #dc2626)", bg: "var(--error-light, #fef2f2)" },
+                followup: { color: "var(--warning, #d97706)", bg: "var(--warning-light, #fffbeb)" },
+                review:   { color: "var(--success, #16a34a)", bg: "var(--success-light, #f0fdf4)" },
+              };
+              const typeIcons = { meeting: "🤝", deadline: "⏰", followup: "📌", review: "🔍" };
+              const meta = typeColors[ev.type] || typeColors.meeting;
+              return (
+                <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 14px", background: "var(--bg-subtle)", border: "1px solid var(--border)", borderRadius: 10 }}>
+                  <div style={{ fontSize: "1rem", flexShrink: 0, marginTop: 1 }}>{typeIcons[ev.type] || "📅"}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-primary)", margin: "0 0 3px" }}>{ev.title}</p>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: ev.description ? 6 : 0 }}>
+                      <span style={{ fontSize: "0.7rem", padding: "2px 8px", borderRadius: 99, background: meta.bg, color: meta.color, border: `1px solid ${meta.color}`, fontWeight: 500 }}>
+                        {ev.date}
+                      </span>
+                      {ev.time && ev.time !== "null" && (
+                        <span style={{ fontSize: "0.7rem", padding: "2px 8px", borderRadius: 99, background: "var(--bg-subtle)", color: "var(--text-muted)", border: "1px solid var(--border)", fontWeight: 500 }}>
+                          🕐 {ev.time}
+                        </span>
+                      )}
+                    </div>
+                    {ev.description && (
+                      <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: 1.5, margin: 0 }}>{ev.description}</p>
+                    )}
+                  </div>
+                </div>
+              );
+            }) : (
+              <p style={{ textAlign: "center", color: "var(--text-muted)", fontSize: "0.8125rem", padding: "24px 0" }}>No calendar events detected.</p>
             )}
           </div>
         )}
